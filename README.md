@@ -17,7 +17,20 @@ The files were downloaded to Holland Computing Center (HCC) under my account usi
 module load igs-portal-client/1.4
 ```
 ## Quality Control
+### 1.FastQC
+Bash scripts (Since the sequence files were very large, I wrote three separate bash scripts to run them separately):
+- FastQC_AO
+- FastQC_EA
+- FastQC_HHS
+### 2.MultiQC
+After running FastQC, we could run MiltiQC to visualize the sequence quality. For this, I ran
+```
+module load multiqc/py37/1.8
+multiqc -o 
+```
 ## Adapter Removal
+From the MultiQC report, there seem to be conatmination around 10 bases in the 3' end of most sequence data. Therefore, I ran cutadapt to remove the low sequnece quality region from all seuquence data.
+Bash script can be found here.
 ## Host Contamination Removal
 ## Contamination Removal
 ## Taxonomic Classification
