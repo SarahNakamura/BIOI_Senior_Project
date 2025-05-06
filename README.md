@@ -19,9 +19,9 @@ module load igs-portal-client/1.4
 ## Quality Control
 ### 1.FastQC
 Bash scripts (Since the sequence files were very large, I wrote three separate bash scripts to run them separately):
-- FastQC_AO
-- FastQC_EA
-- FastQC_HHS
+- [FastQC_AO](fastqc_AO.slurm)
+- [FastQC_EA](fastqc_EA.slurm)
+- [FastQC_HHS](fastqc_HHS.slurm)
 ### 2.MultiQC
 After running FastQC, we could run MiltiQC to visualize the sequence quality. For this, I ran
 ```
