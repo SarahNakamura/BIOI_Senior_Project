@@ -26,7 +26,7 @@ Bash scripts (Since the sequence files were very large, I wrote three separate b
 After running FastQC, we could run MiltiQC to visualize the sequence quality. For this, I ran
 ```
 module load multiqc/py37/1.8
-multiqc -o 
+multiqc -o path/to/output_dir path/to/input_dir
 ```
 ## Adapter Removal
 From the MultiQC report, there seem to be conatmination around 10 bases in the 3' end of most sequence data. Therefore, I ran cutadapt to remove the low sequnece quality region from all seuquence data.
