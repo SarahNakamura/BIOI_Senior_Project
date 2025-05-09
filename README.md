@@ -46,11 +46,152 @@ The slurm scripts for alpha diversity analysis is as follows:
 - [Alpha_diversity_AO](alpha_diversity_AO.slurm)
 - [Alpha_diversity_EA](alpha_diversity_EA.slurm)
 - [Alpha_diversity_HHS](alpha_diversity_HHS.slurm)
+
 It takes the abundance results from bracken as input and outputs a csv file that contain the alpha diversity metrics.
+For visualization, the following R script was ran:
+
+```
+# Load required libraries
+library(ggplot2)
+library(dplyr)
+library(ggpubr)
+
+# Load the CSV files and add a 'Group' column to each
+data1 <- read.csv("alpha_diversity_class/alpha_diversity_AO.csv", header = TRUE)
+data1$Group <- "16S_GM_AO"
+
+data2 <- read.csv("alpha_diversity_class/alpha_diversity_EA.csv", header = TRUE)
+data2$Group <- "16S_GM_EA"
+
+data3 <- read.csv("alpha_diversity_class/alpha_diversity_HHS.csv", header = TRUE)
+data3$Group <- "HHS_fecal"
+
+# Combine all datasets into one dataframe
+data <- bind_rows(data1,data2,data3)
+
+# Check structure of merged data
+head(data)
+
+# Use ANOVA for statistical test since there are three data groups
+anova_result <- aov(Shannon_Diversity ~ Group, data = data)
+summary(anova_result)
+TukeyHSD(anova_result)
+
+
+ggplot(data, aes(x = Group, y = Shannon_Diversity, fill = Group)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.7) +
+  geom_jitter(width = 0.2, alpha = 0.6, size = 2) +  # Add individual points
+  stat_compare_means(method = "anova") +  # ANOVA p-value (change to "kruskal.test" if non-parametric)
+  theme_minimal() +
+  labs(title = "Shannon Diversity Across Datasets",
+       x = "Dataset Group",
+       y = "Shannon Diversity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+ggsave("shannon_diversity_boxplot_class.pdf", width = 8, height = 6)
+```
 
 The slurm scripts for beta diversity analysis is as follows:
 - [Beta_diversity_AO](beta_diversity_AO.slurm)
 - [Beta_diversity_EA](beta_diversity_EA.slurm)
 - [Beta_diversity_HHS](beta_diversity_HHS.slurm)
-The input files are the taxonomic abundance data from bracken. The output 
+
+The input files are the taxonomic abundance data from bracken. The output csv file contain the beta diversity metrics.
+For visualization, the following R script was ran:
+```
+# multi_project_pcoa.R
+
+# Load required libraries
+library(tidyverse)
+library(vegan)
+library(ggplot2)
+
+# ---------- FUNCTION TO LOAD AND MERGE BRACKEN FILES ----------
+load_bracken_frac_files <- function(file_paths, project_labels) {
+  if (length(file_paths) != length(project_labels)) {
+    stop("file_paths and project_labels must have the same length.")
+  }
+  
+  all_data <- list()
+  
+  for (i in seq_along(file_paths)) {
+    file <- file_paths[i]
+    label <- project_labels[i]
+    
+    df <- read.delim(file, check.names = FALSE)
+    frac_cols <- grep("_frac$", colnames(df), value = TRUE)
+    
+    # Subset and transpose
+    abundance <- df[, c("name", frac_cols)]
+    rownames(abundance) <- abundance$name
+    abundance$name <- NULL
+    transposed <- as.data.frame(t(abundance))
+    
+    # Add metadata
+    transposed$SampleID <- rownames(transposed)
+    transposed$Project <- label
+    
+    all_data[[i]] <- transposed
+  }
+  
+  # Combine all samples
+  combined <- bind_rows(all_data)
+  rownames(combined) <- combined$SampleID
+  metadata <- combined[, c("SampleID", "Project")]
+  abundance_matrix <- combined[, !(colnames(combined) %in% c("SampleID", "Project"))]
+  
+  # Fill missing taxa with 0s
+  abundance_matrix[is.na(abundance_matrix)] <- 0
+  
+  # Convert all to numeric
+  abundance_matrix <- as.data.frame(lapply(abundance_matrix, as.numeric))
+  rownames(abundance_matrix) <- metadata$SampleID
+  
+  return(list(
+    abundance_matrix = abundance_matrix,
+    metadata = metadata
+  ))
+}
+
+# ---------- FILE PATHS AND LABELS ----------
+file_paths <- c(
+  "combined_abundance_class_AO.txt",
+  "combined_abundance_class_EA.txt",
+  "combined_abundance_class_HHS.txt"
+)
+project_labels <- c("AO", "EA", "HHS")
+
+# ---------- LOAD AND MERGE DATA ----------
+result <- load_bracken_frac_files(file_paths, project_labels)
+abundance_matrix <- result$abundance_matrix
+metadata <- result$metadata
+
+# ---------- FILTER LOW-PREVALENCE TAXA ----------
+taxa_prevalence <- colSums(abundance_matrix > 0, na.rm = TRUE)
+if (sum(taxa_prevalence >= 3, na.rm = TRUE) > 0) {
+  abundance_matrix <- abundance_matrix[, taxa_prevalence >= 3]
+} else {
+  warning("No taxa present in 3 or more samples. Skipping filter.")
+}
+
+# ---------- PCoA ANALYSIS ----------
+dist_mat <- vegdist(abundance_matrix, method = "bray")
+pcoa_res <- cmdscale(dist_mat, eig = TRUE, k = 2)
+
+# ---------- BUILD PLOT DATA ----------
+pcoa_df <- as.data.frame(pcoa_res$points)
+pcoa_df$SampleID <- rownames(pcoa_df)
+plot_df <- left_join(pcoa_df, metadata, by = "SampleID")
+
+# ---------- PLOT ----------
+ggplot(plot_df, aes(x = V1, y = V2, color = Project)) +
+  geom_point(size = 3) +
+  theme_minimal() +
+  labs(
+    title = "PCoA of Microbiome Composition Across Projects",
+    x = "PC1", y = "PC2", color = "Project"
+  )
+
+# ---------- OPTIONAL: SAVE PLOT ----------
+ggsave("pcoa_across_projects_no_label.pdf", width = 8, height = 6, dpi = 300)
+```
 ## Network Analysis
