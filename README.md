@@ -35,5 +35,15 @@ Bash script can be found here.
 ## Contamination Removal
 ## Taxonomic Classification
 ## Taxonomic Abunance Analysis
+The abundance analysis was performed using bracken. The slurm scripts are as follows:
+- [Bracken_AO](bracken2_bacteria_AO)
+- [Bracken_EA](bracken2_bacteria_EA)
+- [Bracke_HHS](bracken2_bacteria_HHS)
 ## Diversity Analysis (apha diversity & beta diversity)
+Python scripts from KrakenTools was used in this analysis. The GitHub repository for KrakenTools can be found [here](https://github.com/jenniferlu717/KrakenTools)
+The slurm scripts for alpha diversity analysis is as follows:
+- [Alpha_diversity_AO]
+- [Alpha_diversity_EA]
+- [Alpha_diversity_HHS]
+
 ## Network Analysis
