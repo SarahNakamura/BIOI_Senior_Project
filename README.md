@@ -36,14 +36,20 @@ Bash script can be found here.
 ## Taxonomic Classification
 ## Taxonomic Abunance Analysis
 The abundance analysis was performed using bracken. The slurm scripts are as follows:
-- [Bracken_AO](bracken2_bacteria_AO)
-- [Bracken_EA](bracken2_bacteria_EA)
-- [Bracke_HHS](bracken2_bacteria_HHS)
+- [Bracken_AO](bracken2_bacteria_AO.slurm)
+- [Bracken_EA](bracken2_bacteria_EA.slurm)
+- [Bracke_HHS](bracken2_bacteria_HHS.slurm)
 ## Diversity Analysis (apha diversity & beta diversity)
-Python scripts from KrakenTools was used in this analysis. The GitHub repository for KrakenTools can be found [here](https://github.com/jenniferlu717/KrakenTools)
+Python scripts from KrakenTools were used in both analyses, alpha diversity and beta diversity. The GitHub repository for KrakenTools can be found [here](https://github.com/jenniferlu717/KrakenTools)
 The slurm scripts for alpha diversity analysis is as follows:
-- [Alpha_diversity_AO]
-- [Alpha_diversity_EA]
-- [Alpha_diversity_HHS]
+- [Alpha_diversity_AO](alpha_diversity_AO.slurm)
+- [Alpha_diversity_EA](alpha_diversity_EA.slurm)
+- [Alpha_diversity_HHS](alpha_diversity_HHS.slurm)
+It takes the abundance results from bracken as input and outputs a csv file that contain the alpha diversity metrics.
 
+The slurm scripts for beta diversity analysis is as follows:
+- [Beta_diversity_AO](beta_diversity_AO.slurm)
+- [Beta_diversity_EA](beta_diversity_EA.slurm)
+- [Beta_diversity_HHS](beta_diversity_HHS.slurm)
+The input files are the taxonomic abundance data from bracken. The output 
 ## Network Analysis
