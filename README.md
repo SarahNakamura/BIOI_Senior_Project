@@ -23,6 +23,34 @@ Bash scripts (Since the sequence files were very large, I wrote three separate b
 - [FastQC_AO](fastqc_AO.slurm)
 - [FastQC_EA](fastqc_EA.slurm)
 - [FastQC_HHS](fastqc_HHS.slurm)
+
+The link will take you to the designated location where the file resides, but below is FastQC slurm fil written for AO.
+```
+#!/bin/bash
+#SBATCH --job-name=fastqc_AO       # Job name
+#SBATCH --output=output_%j.log  # Output log file (%j will be replaced by the job ID)
+#SBATCH --error=error_%j.log    # Error log file (%j will be replaced by the job ID)
+#SBATCH --time=24:00:00         # Wall time (total time to run the job): 24 hours
+#SBATCH --nodes=1               # Number of nodes
+#SBATCH --ntasks=1              # Number of tasks
+#SBATCH --cpus-per-task=4       # Number of CPU cores per task
+#SBATCH --mem=200GB
+#SBATCH --partition=batch,guest
+#SBATCH --open-mode=append
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=snakamura@unomaha.edu
+#SBATCH --licenses=common
+
+# Load necessary modules
+module load fastqc/0.12
+
+# Run the job
+echo "Starting 16S_GM_AO..."
+fastqc /common/biocore/coffeebean/senior_project_data/16S_GM_AO/*.fastq -o /common/biocore/coffeebean/senior_project_analysis/fastqc/16S_GM_AO
+echo "Done with 16S_GM_AO..."
+
+~                                                 
+```
 ### 2.MultiQC
 After running FastQC, we could run MiltiQC to visualize the sequence quality. For this, I ran
 ```
