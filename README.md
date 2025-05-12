@@ -62,7 +62,7 @@ module load multiqc/py37/1.8
 multiqc -o path/to/output_dir path/to/input_dir
 ```
 ## Adapter Removal
-From the MultiQC report, there seem to be conatmination around 10 bases in the 3' end of most sequence data in the control dataset. Therefore, I ran cutadapt to remove the low sequnece quality region from all seuquence data.
+From the MultiQC report, there seem to be conatmination around 10 bases in the 3' end of most sequence data in the control dataset. Therefore, I ran cutadapt to remove the last 15 bases (low sequnece quality region) from all seuquence data in the control group.
 Slurm script can be found here.
 ```
 #!/bin/bash
