@@ -15,8 +15,12 @@ Links for the advance search in the Human Microbiome Project Database is the fol
 
 The files were downloaded to Holland Computing Center (HCC) under my account using the manifest file generated from the database and Portal-client on HCC. Portal-client is a python-based client used for downloading large datafiles. It will read the manifest files as an input and would download the files to the specified destination. HCC has a pre-installed version of Portal-client (igs-portal-client/1.4) and will be available once installed. (If a newer version if available, I suggest to use the updated version of the software.)
 ```
+# Load portal-client to your system
 module load igs-portal-client/1.4
+# Run portal-client and download all files
+portal_client -m path/to/MANIFEST_FILE -d path/to/destination
 ```
+
 ## Quality Control
 ### 1.FastQC
 Bash scripts (Since the sequence files were very large, I wrote three separate bash scripts to run them separately):
@@ -24,7 +28,7 @@ Bash scripts (Since the sequence files were very large, I wrote three separate b
 - [FastQC_EA](fastqc_EA.slurm)
 - [FastQC_HHS](fastqc_HHS.slurm)
 
-The link will take you to the designated location where the file resides, but below is FastQC slurm fil written for AO.
+The link will take you to the designated location where the file resides, but below is FastQC slurm file written for AO.
 ```
 #!/bin/bash
 #SBATCH --job-name=fastqc_AO       # Job name
@@ -68,12 +72,105 @@ The abundance analysis was performed using bracken. The slurm scripts are as fol
 - [Bracken_AO](bracken2_bacteria_AO.slurm)
 - [Bracken_EA](bracken2_bacteria_EA.slurm)
 - [Bracke_HHS](bracken2_bacteria_HHS.slurm)
+
+Below is the slurm file for AO dataset.
+```
+#!/bin/bash
+#SBATCH --job-name=bracken2_standard_AO_class_level
+#SBATCH --output=output_%j.out
+#SBATCH --error=error_%j.err
+#SBATCH --time=4:00:00
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=200G
+#SBATCH --partition=batch,guest
+#SBATCH --open-mode=append
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=snakamura@unomaha.edu
+#SBATCH --licenses=common
+
+# Load Bracken module (adjust as needed)
+module load bracken/2.6
+module load kraken2/2.1
+
+# Set paths
+KRAKEN_DB="/work/lymphomics/coffeebean/kraken2_db"
+READ_LENGTH=100  # Adjust based on sequencing reads
+INPUT_DIR="/common/biocore/coffeebean/senior_project_analysis/kraken2_results/16S_GM_AO"
+OUTPUT_DIR="/common/biocore/coffeebean/senior_project_analysis/bracken2_class/16S_GM_AO"
+mkdir -p ${OUTPUT_DIR}
+
+# Set parameters
+THRESHOLD=10
+
+# Loop through all .kreport files
+for kreport_file in ${INPUT_DIR}/*_report.txt; do
+    # Get sample prefix
+    sample_prefix=$(basename ${kreport_file} _report.txt)
+
+    # Run Bracken at species level
+    bracken -d ${KRAKEN_DB} \
+            -i ${kreport_file} \
+            -o ${OUTPUT_DIR}/${sample_prefix}_bracken.txt \
+            -t ${THRESHOLD} \
+            -r ${READ_LENGTH} \
+            -l C
+
+
+    echo "Processed ${kreport_file}"
+done
+
+echo "Bracken processing for taxonomic classification completed."
+```
 ## Diversity Analysis (apha diversity & beta diversity)
 Python scripts from KrakenTools were used in both analyses, alpha diversity and beta diversity. The GitHub repository for KrakenTools can be found [here](https://github.com/jenniferlu717/KrakenTools)
 The slurm scripts for alpha diversity analysis is as follows:
 - [Alpha_diversity_AO](alpha_diversity_AO.slurm)
 - [Alpha_diversity_EA](alpha_diversity_EA.slurm)
 - [Alpha_diversity_HHS](alpha_diversity_HHS.slurm)
+
+Below is the slurm file for the AO dataset.
+```
+#!/bin/bash
+#SBATCH --job-name=alpha_diversity_class_AO
+#SBATCH --output=output_%j.out
+#SBATCH --error=error_%j.err
+#SBATCH --time=4:00:00
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=200G
+#SBATCH --partition=batch,guest
+#SBATCH --open-mode=append
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=snakamura@unomaha.edu
+#SBATCH --licenses=common
+
+# Load required modules
+module load krakentools/py310/2.1
+module load python/3.9
+
+# Set paths
+INPUT_DIR="/common/biocore/coffeebean/senior_project_analysis/bracken2_class/16S_GM_AO"
+OUTPUT_FILE="/common/biocore/coffeebean/senior_project_analysis/alpha_diversity_class/alpha_diversity_AO.csv"
+
+# Ensure the CSV file has a header
+echo "Sample,Shannon_Diversity" > $OUTPUT_FILE
+
+# Loop through all txt files
+for bracken2_file in ${INPUT_DIR}/*_kraken2_bracken.txt; do
+    # Get sample prefix (remove "_bracken.txt" to get sample name)
+    sample_prefix=$(basename "$bracken2_file" | sed 's/_kraken2_bracken.txt//')
+
+    # Run alpha_diversity.py and capture the Shannon diversity index
+    shannon_value=$(python /common/lymphomics/coffeebean/murine_fecal_analysis/alpha_diversity.py -f ${bracken2_file} | awk '{print $NF}')
+
+    # Append results to CSV
+    echo "$sample_prefix,$shannon_value" >> $OUTPUT_FILE
+
+    echo "Processed ${bracken2_file}"
+done
+
+
+echo "Alpha diversity calculation complete!"
+```
 
 It takes the abundance results from bracken as input and outputs a csv file that contain the alpha diversity metrics.
 For visualization, the following R script was ran:
@@ -122,6 +219,41 @@ The slurm scripts for beta diversity analysis is as follows:
 - [Beta_diversity_AO](beta_diversity_AO.slurm)
 - [Beta_diversity_EA](beta_diversity_EA.slurm)
 - [Beta_diversity_HHS](beta_diversity_HHS.slurm)
+
+Below is the slurm file for the AO dataset.
+```
+#!/bin/bash
+#SBATCH --job-name=beta_diversity_AO # Job name
+#SBATCH --output=output_%j.out
+#SBATCH --error=error_%j.err
+#SBATCH --time=4:00:00
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=200G
+#SBATCH --partition=batch,guest
+#SBATCH --open-mode=append
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=snakamura@unomaha.edu
+#SBATCH --licenses=common
+
+# Load required modules
+module load krakentools/py310/2.1
+module load python/3.9
+
+# Set paths
+INPUT_DIR="/common/biocore/coffeebean/senior_project_analysis/bracken2/16S_GM_AO"
+OUTPUT_DIR="/common/biocore/coffeebean/senior_project_analysis/beta_diversity_plots"
+mkdir -p $OUTPUT_DIR
+cd $OUTPUT_DIR
+
+# Run beta diversity
+echo "Running beta_diversity.py on all bracken files..."
+
+python /common/lymphomics/coffeebean/murine_fecal_analysis/beta_diversity.py \
+    -i ${INPUT_DIR}/*_kraken2_bracken.txt \
+    --type bracken > ${OUTPUT_DIR}/beta_diversity_AO.csv
+
+echo "Beta diversity calculation complete!"
+```
 
 The input files are the combined taxonomic abundance data from bracken. In order to combine the abundance data of all samples among the aThe output csv file contain the beta diversity metrics.
 For visualization, the following R script was ran:
