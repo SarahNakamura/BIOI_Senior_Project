@@ -1,5 +1,8 @@
 # BIOI_Senior_Project
-This is the code repository for my bioinformatics senior project 
+This is the code repository for my bioinformatics senior project. Most steps within the pipeline were completed through job submissions using slurm files. The slurm files can be run via command line as follows:
+```
+sbatch path/to/slurm_file.slurm
+```
 ## Data Download
 The data for this project were produced from the NIH Human Microbiome Project and was retrieved from their designated database. With advanced search, I have narrowed down the data of interest in the FASTQ format. The overview of the data retrieved is below:
 | Study | Number of files | Type | File format|
@@ -23,6 +26,8 @@ portal_client -m path/to/MANIFEST_FILE -d path/to/destination
 
 ## Quality Control
 ### 1.FastQC
+FastQC was used to analyze the quality of the raw sequence file. Reference:Andrews, S. (2010). FastQC:  A Quality Control Tool for High Throughput Sequence Data [Online]. Available online at: http://www.bioinformatics.babraham.ac.uk/projects/fastqc/
+
 Bash scripts (Since the sequence files were very large, I wrote three separate bash scripts to run them separately):
 - [FastQC_AO](fastqc_AO.slurm)
 - [FastQC_EA](fastqc_EA.slurm)
@@ -56,13 +61,17 @@ echo "Done with 16S_GM_AO..."
 ~                                                 
 ```
 ### 2.MultiQC
-After running FastQC, we could run MiltiQC to visualize the sequence quality. For this, I ran
+After running FastQC, we could run MiltiQC to visualize the sequence quality. Reference:P. Ewels, M. Magnusson, S. Lundin, and M. Käller. 2016. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 32(19): 3047-3048.
+
+For this, I ran
 ```
 module load multiqc/py37/1.8
 multiqc -o path/to/output_dir path/to/input_dir
 ```
 ## Adapter Removal
-From the MultiQC report, there seem to be conatmination around the last 15 bases in the control dataset. Therefore, I ran cutadapt to remove the low sequnece quality region from all seuquence data in the control group.
+From the MultiQC report, there seem to be conatmination around the last 15 bases in the control dataset. Therefore, I ran cutadapt to remove the low sequnece quality region from all seuquence data in the control group. Cutadapt documentation can be found [here](https://cutadapt.readthedocs.io/en/stable/).
+Reference: Martin, M. (2011). CUTADAPT removes adapter sequences from high-throughput sequencing reads. EMBnet.Journal, 17(1), 10. https://doi.org/10.14806/ej.17.1.200 
+
 Slurm script can be found here.
 ```
 #!/bin/bash
@@ -106,6 +115,7 @@ echo "Done with murine fecal cutadapt..."
 ```
 ## Contamination Removal
 For the host contamination removal step, "GRCh38_noalt_decoy_as" was retrieved from the Bowtie2 documentation. The documentation can be found [here](https://bowtie-bio.sourceforge.net/bowtie2/manual.shtml).
+Reference:  Wood DE, Lu J, Langmead B. Improved metagenomic analysis with Kraken 2 (2019). Genome Biology. 2019 Nov;p. 76230
 
 The slurm files can be found below:
 - [Bowtie2_AO](bowtie2_AO.slurm)
@@ -163,7 +173,11 @@ done
 echo "Done with murine fecal Bowtie2 (host contamination removal)"
 ```
 ## Taxonomic Classification
-Kraken2 was used for the taxonomic abundance analysis. The slurm script can be found [here](kraken2.slurm) and below.
+Kraken2 was used for the taxonomic abundance analysis. The slurm script can be found [here](kraken2.slurm) and below. The pre-intalled Kraken2 standard database in HCC was used in this step. Reference: Lu, J., Rincon, N., Wood, D.E. et al. Metagenome analysis using the Kraken software suite. Nat Protoc 17, 2815–2839 (2022). https://doi.org/10.1038/s41596-022-00738-y![image](https://github.com/user-attachments/assets/a0518553-2f7f-42d0-a095-7f643f620b86)
+
+Kraken2 documentation can be found [here](https://ccb.jhu.edu/software/kraken2/).
+
+The following is the slurm script for Kraken2.
 ```
 #!/bin/bash
 #SBATCH --job-name=kraken2_taxonomic_classification # Job name
@@ -236,7 +250,9 @@ done
 echo "All samples processed!"
 ```
 ## Taxonomic Abunance Analysis
-The abundance analysis was performed using bracken. The slurm scripts are as follows:
+The abundance analysis was performed using bracken in the class level. Reference: Lu J, Breitwieser FP, Thielen P, Salzberg SL. 2017. Bracken: estimating species abundance in metagenomics data. PeerJ Computer Science 3:e104 https://doi.org/10.7717/peerj-cs.104
+
+The slurm scripts are as follows:
 - [Bracken_AO](bracken2_bacteria_AO.slurm)
 - [Bracken_EA](bracken2_bacteria_EA.slurm)
 - [Bracke_HHS](bracken2_bacteria_HHS.slurm)
@@ -344,6 +360,7 @@ echo "Alpha diversity calculation complete!"
 ```
 
 It takes the abundance results from bracken as input and outputs a csv file that contain the alpha diversity metrics.
+
 For visualization, the following R script was ran:
 
 ```
@@ -386,44 +403,103 @@ ggplot(data, aes(x = Group, y = Shannon_Diversity, fill = Group)) +
 ggsave("shannon_diversity_boxplot_class.pdf", width = 8, height = 6)
 ```
 
-The slurm scripts for beta diversity analysis is as follows:
-- [Beta_diversity_AO](beta_diversity_AO.slurm)
-- [Beta_diversity_EA](beta_diversity_EA.slurm)
-- [Beta_diversity_HHS](beta_diversity_HHS.slurm)
-
-Below is the slurm file for the AO dataset.
+The R for beta diversity analysis is as follows using PCoA:
 ```
-#!/bin/bash
-#SBATCH --job-name=beta_diversity_AO # Job name
-#SBATCH --output=output_%j.out
-#SBATCH --error=error_%j.err
-#SBATCH --time=4:00:00
-#SBATCH --cpus-per-task=16
-#SBATCH --mem=200G
-#SBATCH --partition=batch,guest
-#SBATCH --open-mode=append
-#SBATCH --mail-type=END,FAIL
-#SBATCH --mail-user=snakamura@unomaha.edu
-#SBATCH --licenses=common
+# multi_project_pcoa.R
 
-# Load required modules
-module load krakentools/py310/2.1
-module load python/3.9
+# Load required libraries
+library(tidyverse)
+library(vegan)
+library(ggplot2)
 
-# Set paths
-INPUT_DIR="/common/biocore/coffeebean/senior_project_analysis/bracken2/16S_GM_AO"
-OUTPUT_DIR="/common/biocore/coffeebean/senior_project_analysis/beta_diversity_plots"
-mkdir -p $OUTPUT_DIR
-cd $OUTPUT_DIR
+# ---------- FUNCTION TO LOAD AND MERGE BRACKEN FILES ----------
+load_bracken_frac_files <- function(file_paths, project_labels) {
+  if (length(file_paths) != length(project_labels)) {
+    stop("file_paths and project_labels must have the same length.")
+  }
+  
+  all_data <- list()
+  
+  for (i in seq_along(file_paths)) {
+    file <- file_paths[i]
+    label <- project_labels[i]
+    
+    df <- read.delim(file, check.names = FALSE)
+    frac_cols <- grep("_frac$", colnames(df), value = TRUE)
+    
+    # Subset and transpose
+    abundance <- df[, c("name", frac_cols)]
+    rownames(abundance) <- abundance$name
+    abundance$name <- NULL
+    transposed <- as.data.frame(t(abundance))
+    
+    # Add metadata
+    transposed$SampleID <- rownames(transposed)
+    transposed$Project <- label
+    
+    all_data[[i]] <- transposed
+  }
+  
+  # Combine all samples
+  combined <- bind_rows(all_data)
+  rownames(combined) <- combined$SampleID
+  metadata <- combined[, c("SampleID", "Project")]
+  abundance_matrix <- combined[, !(colnames(combined) %in% c("SampleID", "Project"))]
+  
+  # Fill missing taxa with 0s
+  abundance_matrix[is.na(abundance_matrix)] <- 0
+  
+  # Convert all to numeric
+  abundance_matrix <- as.data.frame(lapply(abundance_matrix, as.numeric))
+  rownames(abundance_matrix) <- metadata$SampleID
+  
+  return(list(
+    abundance_matrix = abundance_matrix,
+    metadata = metadata
+  ))
+}
 
-# Run beta diversity
-echo "Running beta_diversity.py on all bracken files..."
+# ---------- FILE PATHS AND LABELS ----------
+file_paths <- c(
+  "combined_abundance_class_AO.txt",
+  "combined_abundance_class_EA.txt",
+  "combined_abundance_class_HHS.txt"
+)
+project_labels <- c("AO", "EA", "HHS")
 
-python /common/lymphomics/coffeebean/murine_fecal_analysis/beta_diversity.py \
-    -i ${INPUT_DIR}/*_kraken2_bracken.txt \
-    --type bracken > ${OUTPUT_DIR}/beta_diversity_AO.csv
+# ---------- LOAD AND MERGE DATA ----------
+result <- load_bracken_frac_files(file_paths, project_labels)
+abundance_matrix <- result$abundance_matrix
+metadata <- result$metadata
 
-echo "Beta diversity calculation complete!"
+# ---------- FILTER LOW-PREVALENCE TAXA ----------
+taxa_prevalence <- colSums(abundance_matrix > 0, na.rm = TRUE)
+if (sum(taxa_prevalence >= 3, na.rm = TRUE) > 0) {
+  abundance_matrix <- abundance_matrix[, taxa_prevalence >= 3]
+} else {
+  warning("No taxa present in 3 or more samples. Skipping filter.")
+}
+
+# ---------- PCoA ANALYSIS ----------
+dist_mat <- vegdist(abundance_matrix, method = "bray")
+pcoa_res <- cmdscale(dist_mat, eig = TRUE, k = 2)
+
+# ---------- BUILD PLOT DATA ----------
+pcoa_df <- as.data.frame(pcoa_res$points)
+pcoa_df$SampleID <- rownames(pcoa_df)
+plot_df <- left_join(pcoa_df, metadata, by = "SampleID")
+
+# ---------- PLOT ----------
+ggplot(plot_df, aes(x = V1, y = V2, color = Project)) +
+  geom_point(size = 3) +
+  theme_minimal() +
+  labs(
+    title = "PCoA of Microbiome Composition Across Projects",
+    x = "PC1", y = "PC2", color = "Project"
+  )
+
+# ---------- OPTIONAL: SAVE PLOT ----------
+ggsave("pcoa_across_projects_no_label.pdf", width = 8, height = 6, dpi = 300)
 ```
 
 The input files are the combined taxonomic abundance data from bracken. In order to combine the abundance data of all samples among the aThe output csv file contain the beta diversity metrics.
