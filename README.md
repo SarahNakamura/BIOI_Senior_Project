@@ -62,8 +62,48 @@ module load multiqc/py37/1.8
 multiqc -o path/to/output_dir path/to/input_dir
 ```
 ## Adapter Removal
-From the MultiQC report, there seem to be conatmination around 10 bases in the 3' end of most sequence data. Therefore, I ran cutadapt to remove the low sequnece quality region from all seuquence data.
-Bash script can be found here.
+From the MultiQC report, there seem to be conatmination around 10 bases in the 3' end of most sequence data in the control dataset. Therefore, I ran cutadapt to remove the low sequnece quality region from all seuquence data.
+Slurm script can be found here.
+```
+#!/bin/bash
+#SBATCH --job-name=cutadapt_HHS # Job name
+#SBATCH --output=output_%j.log # Output log filr (%j will be replaced by the job ID)
+#SBATCH --error=error_%j.log # Error log file (%j will be replaced by the job ID) 
+#SBATCH --time=24:00:00 # Wall time (total time to eint the job): 8 hours
+#SBATCH --nodes=1 # Number of nodes
+#SBATCH --ntasks=1 # Number of tasks
+#SBATCH --cpus-per-task=4 # Number of CPU cores per task
+#SBATCH --mem=200GB
+#SBATCH --partition=batch,guest
+#SBATCH --open-mode=append
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=snakamura@unomaha.edu
+
+
+# Load necessary modules
+module load cutadapt/2.9
+
+# Directories
+INPUT_DIR="/common/biocore/coffeebean/senior_project_data/HHS_fecal"
+OUTPUT_DIR="/common/biocore/coffeebean/senior_project_analysis/cutadapt/HHS_fecal"
+
+# Run the job
+# Loop through all the fastq files in the directory
+echo "Starting murine fecal cutadapt..."
+
+for file in ${INPUT_DIR}/*fastq; do
+        echo ${file}
+        # Extract the base name of the file (without path and extension)
+        base_name=$(basename ${file} .fastq)
+
+	# Run cutadapt over file
+	cutadapt -u -15 -o ${OUTPUT_DIR}/${base_name}_trimmed.fastq  ${file}
+        
+        echo "Processed: ${file}"
+done
+
+echo "Done with murine fecal cutadapt..."
+```
 ## Host Contamination Removal
 ## Contamination Removal
 ## Taxonomic Classification
@@ -123,6 +163,9 @@ echo "Bracken processing for taxonomic classification completed."
 ```
 ## Diversity Analysis (apha diversity & beta diversity)
 Python scripts from KrakenTools were used in both analyses, alpha diversity and beta diversity. The GitHub repository for KrakenTools can be found [here](https://github.com/jenniferlu717/KrakenTools)
+
+Reference: [Lu J, Rincon N, Wood D E, Breitwieser F P, Pockrandt C, Langmead B, Salzberg S L, Steinegger M. Metagenome analysis using the Kraken software suite. Nature Protocols, doi: 10.1038/s41596-022-00738-y (2022)] (https://www.nature.com/articles/s41596-022-00738-y)
+
 The slurm scripts for alpha diversity analysis is as follows:
 - [Alpha_diversity_AO](alpha_diversity_AO.slurm)
 - [Alpha_diversity_EA](alpha_diversity_EA.slurm)
