@@ -116,7 +116,7 @@ echo "Done with murine fecal cutadapt..."
 ```
 ## Contamination Removal
 For the host contamination removal step, "GRCh38_noalt_decoy_as" was retrieved from the Bowtie2 documentation. The documentation can be found [here](https://bowtie-bio.sourceforge.net/bowtie2/manual.shtml).
-Reference:  Wood DE, Lu J, Langmead B. Improved metagenomic analysis with Kraken 2 (2019). Genome Biology. 2019 Nov;p. 76230
+Reference: Langmead B, Salzberg SL. Fast gapped-read alignment with Bowtie 2. Nature Methods. 2012 Mar 4;9(4):357-9. doi: 10.1038/nmeth.1923.
 
 The slurm files can be found below:
 - [Bowtie2_AO](bowtie2_AO.slurm)
@@ -174,7 +174,8 @@ done
 echo "Done with murine fecal Bowtie2 (host contamination removal)"
 ```
 ## Taxonomic Classification
-Kraken2 was used for the taxonomic abundance analysis. The slurm script can be found [here](kraken2.slurm) and below. The pre-intalled Kraken2 standard database in HCC was used in this step. Reference: Lu, J., Rincon, N., Wood, D.E. et al. Metagenome analysis using the Kraken software suite. Nat Protoc 17, 2815–2839 (2022). https://doi.org/10.1038/s41596-022-00738-y![image](https://github.com/user-attachments/assets/a0518553-2f7f-42d0-a095-7f643f620b86)
+Kraken2 was used for the taxonomic abundance analysis. The slurm script can be found [here](kraken2.slurm) and below. The pre-intalled Kraken2 standard database in HCC was used in this step. Reference: Wood, D.E., Lu, J. & Langmead, B. Improved metagenomic analysis with Kraken 2. (2019). Genome Biol 20, 257. https://doi.org/10.1186/s13059-019-1891-0
+
 
 Kraken2 documentation can be found [here](https://ccb.jhu.edu/software/kraken2/).
 
