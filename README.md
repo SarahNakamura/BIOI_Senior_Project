@@ -305,8 +305,16 @@ done
 
 echo "Bracken processing for taxonomic classification completed."
 ```
+The taxonomic classification data are separated into files by sample. To combine the abundance data from all samples into one for each project group, KBKen was used. The "combine_bracken_outputs.py" was used. Reference: SumeetTiwari07. (n.d.). Sumeettiwari07/KBKen: Converting Kraken2 and Bracken output into phyloseq object. GitHub. https://github.com/SumeetTiwari07/KBKen
+
+To run this:
+```
+python3 combine_bracken_outputs.py --files path/to/*bracken_outputfiles -o path/to/combined_bracken_output
+```
+
+
 ## Diversity Analysis (apha diversity & beta diversity)
-Python scripts from KrakenTools were used in both analyses, alpha diversity and beta diversity. The GitHub repository for KrakenTools can be found [here](https://github.com/jenniferlu717/KrakenTools)
+Python script from KrakenTools was used in alpha diversity. The GitHub repository for KrakenTools can be found [here](https://github.com/jenniferlu717/KrakenTools)
 
 Reference: [Lu J, Rincon N, Wood D E, Breitwieser F P, Pockrandt C, Langmead B, Salzberg S L, Steinegger M. Metagenome analysis using the Kraken software suite. Nature Protocols, doi: 10.1038/s41596-022-00738-y (2022)] (https://www.nature.com/articles/s41596-022-00738-y)
 
