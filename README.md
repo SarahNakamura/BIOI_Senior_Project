@@ -511,7 +511,7 @@ ggsave("pcoa_across_projects_no_label.pdf", width = 8, height = 6, dpi = 300)
 ```
 
 ## Network Analysis
-Taxonomic abundance networks were constructed for all three sample groups. The R script is as folows:
+Taxonomic abundance networks were constructed for all three sample groups. The R script is as folows (change input combined abundance file to the project of interest):
 ```
 # taxon_network.R
 
